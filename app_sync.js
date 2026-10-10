@@ -1,58 +1,53 @@
 // 이벤트 리스너 설정
 document.getElementById('fetchData').addEventListener('click', function() {
-    var clientId = '';
-    var clientSecret = '';
+    var pokemonName = document.getElementById('pokemonInput').value.trim().toLowerCase();
 
-    // 토큰을 가져오는 함수
-    function getToken() {
+    if (!pokemonName) {
+        alert('Please enter a pokemon name!');
+        return;
+    }
+
+    // 포켓몬 정보를 가져오는 함수 (동기 XHR 구조 유지)
+    function getPokemonData(name) {
         var xhr = new XMLHttpRequest();
-        xhr.open("POST", "https://accounts.spotify.com/api/token", false); // 비동기 파라미터를 false
-        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        xhr.setRequestHeader("Authorization", "Basic " + btoa(clientId + ":" + clientSecret));
+        xhr.open("GET", "https://pokeapi.co/api/v2/pokemon/" + name, false);
 
-        xhr.send("grant_type=client_credentials");
+        xhr.send();
 
         if (xhr.status === 200) {
-            var response = JSON.parse(xhr.responseText);
-            return response.access_token;
+            return JSON.parse(xhr.responseText);
         } else {
             return null; // 오류 처리
         }
     }
 
-    // 아티스트의 앨범을 가져오는 함수
-    function getAlbums(token) {
-        var artistId = '4gzpq5DPGxSnKTe4SA8HAU';
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "https://api.spotify.com/v1/artists/" + artistId + "/albums", false);
-        xhr.setRequestHeader("Authorization", "Bearer " + token);
+    // 포켓몬 정보를 화면에 보여주는 함수
+    function displayPokemonInfo(data) {
+        var pokeInfo = document.getElementById('pokeInfo');
+        pokeInfo.innerHTML = '';
 
-        xhr.send();
+        if (data) {
+            var nameItem = document.createElement('li');
+            nameItem.textContent = "Name: " + data.name;
 
-        if (xhr.status === 200) {
-            return JSON.parse(xhr.responseText).items;
+            var typeItem = document.createElement('li');
+            var types = data.types.map(function(t) { return t.type.name; }).join(', ');
+            typeItem.textContent = "Type: " + types;
+
+            var heightItem = document.createElement('li');
+            heightItem.textContent = "Height: " + data.height + " | Weight: " + data.weight;
+
+            pokeInfo.appendChild(nameItem);
+            pokeInfo.appendChild(typeItem);
+            pokeInfo.appendChild(heightItem);
         } else {
-            return []; // 오류 처리
+            var errorItem = document.createElement('li');
+            errorItem.textContent = "Pokémon not found.";
+            pokeInfo.appendChild(errorItem);
         }
     }
 
-    // 앨범 정보를 화면에 보여주는 함수
-    function displayAlbums(albums) {
-        var albumsList = document.getElementById('albumsList');
-        albumsList.innerHTML = '';
-        albums.forEach(function(album) {
-            var listItem = document.createElement('li');
-            listItem.textContent = album.name;
-            albumsList.appendChild(listItem);
-        });
-    }
-
     // 실행 로직
-    var token = getToken();
-    if (token) {
-        var albums = getAlbums(token);
-        displayAlbums(albums);
-    } else {
-        console.error('Failed to retrieve token');
-    }
+    var data = getPokemonData(pokemonName);
+    displayPokemonInfo(data);
 });
